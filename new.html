@@ -1,30 +1,1328 @@
+==============================app.HTML=======================
+<div class="app">
 
-<html>
-	<head>
-	<title>Event!!!</title>
-	<script type="text/javascript">
-	function trigger(){
-		document.getElementById("hover").addEventListener("mouseover", popup)
-		function popup(){
-			alert('Hey Stop');
-		}
-	}
-	</script>
+  <!-- ==========================================
+       HEADER
+  =========================================== -->
 
-	<style>
-	p{
-	     font-size:50px;
-	     position: fixed;
-	     left: 550px;
-	     top: 300px;
-	}
-	</style>
+  <header class="top-header">
 
-	</head>
+    <div class="logo">
+      <span class="logo-icon">🎡</span>
+      <span>Random Wheel</span>
+    </div>
 
-	<body  onload="trigger();">
+    <div class="header-menu">
 
-	<p id="hover">Welcome!!!</p>
+      <button>
+        New
+      </button>
 
-	</body>
-	</html>
+      <button>
+        ▣ Save
+      </button>
+
+      <button>
+        ⚑ Design
+      </button>
+
+      <button>
+        ↗ Share
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <!-- ==========================================
+       MAIN
+  =========================================== -->
+
+  <main class="main-container">
+
+
+    <!-- ========================================
+         WHEEL
+    ========================================= -->
+
+    <section class="wheel-section">
+
+      <div class="wheel-container">
+
+
+        <!-- POINTER -->
+
+        <div class="pointer">
+
+          <div class="pointer-arrow"></div>
+
+        </div>
+
+
+        <!-- WHEEL -->
+
+        <div
+          class="wheel"
+          [style.background]="getWheelBackground()"
+          [style.transform]="'rotate(' + rotation + 'deg)'">
+
+
+          <!-- WHEEL TEXT -->
+
+          @for (choice of choices; track $index) {
+
+            <div
+              class="wheel-label"
+              [style.transform]="
+                'rotate(' +
+                ($index * getSegmentAngle() +
+                getSegmentAngle() / 2) +
+                'deg) translateY(-170px) rotate(90deg)'
+              ">
+
+              <span>
+                {{ choice }}
+              </span>
+
+            </div>
+
+          }
+
+
+          <!-- CENTER -->
+
+          <div class="wheel-center">
+
+            <div class="center-inner"></div>
+
+          </div>
+
+
+        </div>
+
+
+        <!-- SPIN BUTTON -->
+
+        <button
+          class="spin-button"
+          (click)="spinWheel()"
+          [disabled]="spinning">
+
+          @if (spinning) {
+
+            SPINNING...
+
+          }
+          @else {
+
+            SPIN
+
+          }
+
+        </button>
+
+
+      </div>
+
+    </section>
+
+
+    <!-- ========================================
+         RIGHT PANEL
+    ========================================= -->
+
+    <section class="control-panel">
+
+
+      <!-- TOOLBAR -->
+
+      <div class="toolbar">
+
+        <button class="tool active">
+          ✎
+        </button>
+
+        <button class="tool">
+          ☷
+          <span class="notification">
+            1
+          </span>
+        </button>
+
+        <button class="tool">
+          ◉
+        </button>
+
+        <button class="tool">
+          +
+        </button>
+
+        <button class="color-tool">
+          🌈
+        </button>
+
+      </div>
+
+
+      <!-- ACTION BAR -->
+
+      <div class="action-bar">
+
+        <button
+          class="action-button"
+          (click)="shuffleChoices()">
+
+          🔀
+
+        </button>
+
+
+        <button
+          class="action-button"
+          (click)="sortChoices()">
+
+          A↕Z
+
+        </button>
+
+
+        <button
+          class="action-button settings">
+
+          ⚙
+
+        </button>
+
+
+        <button
+          class="add-button"
+          (click)="addChoice()">
+
+          Add 🖼
+
+        </button>
+
+      </div>
+
+
+      <!-- EDITOR -->
+
+      <div class="editor">
+
+        <textarea
+          [value]="choices.join('\n')"
+          (input)="updateChoices($event)"
+          spellcheck="false">
+        </textarea>
+
+        <div class="smile">
+          ☺
+        </div>
+
+      </div>
+
+
+      <!-- ENTRY COUNT -->
+
+      <div class="entry-counter">
+
+        Entries: {{ choices.length }}
+
+      </div>
+
+
+    </section>
+
+  </main>
+
+
+  <!-- ==========================================
+       WINNER POPUP
+  =========================================== -->
+
+@if (showWinner) {
+
+  <div class="popup-overlay">
+
+    <div class="winner-popup">
+
+      <button
+        class="close-button"
+        (click)="closeWinner()">
+
+        ×
+
+      </button>
+
+      <div class="winner-icon">
+        🎉
+      </div>
+
+      <h2>
+        We have a winner!
+      </h2>
+
+      <div class="winner-text">
+        {{ winner }}
+      </div>
+
+      <button
+        class="again-button"
+        (click)="closeWinner()">
+
+        Continue
+
+      </button>
+
+    </div>
+
+  </div>
+
+}
+
+</div>
+
+======================================app.ts======================================
+
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [FormsModule],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
+})
+export class App {
+
+  // =====================================================
+  // CHOICES
+  // =====================================================
+
+  choices: string[] = [
+    'Choice 1',
+    'Choice 2',
+    'Choice 3',
+    'Choice 4',
+    'Choice 5',
+    'Choice 6'
+  ];
+
+
+  // =====================================================
+  // WHEEL ROTATION
+  // =====================================================
+
+  rotation = 0;
+
+  spinning = false;
+
+
+  // =====================================================
+  // WINNER
+  // =====================================================
+
+  winner = '';
+
+  showWinner = false;
+
+
+  // =====================================================
+  // COLORS
+  // =====================================================
+
+  colors = [
+    '#e21e25',
+    '#ff00ff',
+    '#f3df22',
+    '#60458f',
+    '#25a52b',
+    '#ed7d0b'
+  ];
+
+
+  // =====================================================
+  // UPDATE CHOICES
+  // =====================================================
+
+  updateChoices(event: Event) {
+
+    const textarea =
+      event.target as HTMLTextAreaElement;
+
+    this.choices = textarea.value
+      .split('\n')
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+
+  }
+
+
+  // =====================================================
+  // ADD CHOICE
+  // =====================================================
+
+  addChoice() {
+
+    this.choices.push(
+      `Choice ${this.choices.length + 1}`
+    );
+
+  }
+
+
+  // =====================================================
+  // SHUFFLE
+  // =====================================================
+
+  shuffleChoices() {
+
+    if (this.spinning) {
+      return;
+    }
+
+    this.choices.sort(
+      () => Math.random() - 0.5
+    );
+
+  }
+
+
+  // =====================================================
+  // SORT
+  // =====================================================
+
+  sortChoices() {
+
+    if (this.spinning) {
+      return;
+    }
+
+    this.choices.sort(
+      (a, b) => a.localeCompare(b)
+    );
+
+  }
+
+
+  // =====================================================
+  // CLEAN CHOICES
+  // =====================================================
+
+  cleanChoices() {
+
+    this.choices = this.choices
+      .map(item => item.trim())
+      .filter(item => item !== '');
+
+  }
+
+
+  // =====================================================
+  // SEGMENT ANGLE
+  // =====================================================
+
+  getSegmentAngle(): number {
+
+    if (this.choices.length === 0) {
+      return 360;
+    }
+
+    return 360 / this.choices.length;
+
+  }
+
+
+  // =====================================================
+  // NORMALIZE ANGLE
+  // =====================================================
+
+  normalizeAngle(angle: number): number {
+
+    return ((angle % 360) + 360) % 360;
+
+  }
+
+
+  // =====================================================
+  // SPIN WHEEL
+  // =====================================================
+
+ spinWheel() {
+
+  // Don't allow another spin while spinning
+  if (this.spinning) {
+    return;
+  }
+
+  // Clean empty choices
+  this.cleanChoices();
+
+  // Stop if there are no choices
+  if (this.choices.length === 0) {
+    return;
+  }
+
+  // Start spinning
+  this.spinning = true;
+
+  // Hide any previous winner popup
+  this.showWinner = false;
+
+
+  // ==========================================
+  // SELECT WINNER BEFORE SPIN
+  // ==========================================
+
+  const winnerIndex = Math.floor(
+    Math.random() * this.choices.length
+  );
+
+  // Store winner
+  this.winner = this.choices[winnerIndex];
+
+
+  // ==========================================
+  // CALCULATE SEGMENT
+  // ==========================================
+
+  const segmentAngle =
+    this.getSegmentAngle();
+
+
+  // Center of selected segment
+  const winnerCenter =
+    (winnerIndex * segmentAngle) +
+    (segmentAngle / 2);
+
+
+  // ==========================================
+  // POINTER
+  // ==========================================
+
+  // Pointer is on the right side
+  const pointerAngle = 90;
+
+
+  // ==========================================
+  // CURRENT WHEEL ANGLE
+  // ==========================================
+
+  const currentAngle =
+    this.normalizeAngle(this.rotation);
+
+
+  // ==========================================
+  // TARGET ANGLE
+  // ==========================================
+
+  const targetAngle =
+    this.normalizeAngle(
+      pointerAngle - winnerCenter
+    );
+
+
+  // ==========================================
+  // CALCULATE REQUIRED ROTATION
+  // ==========================================
+
+  let additionalRotation =
+    targetAngle - currentAngle;
+
+
+  if (additionalRotation < 0) {
+    additionalRotation += 360;
+  }
+
+
+  // ==========================================
+  // ADD FULL SPINS
+  // ==========================================
+
+  const fullSpins =
+    5 + Math.floor(Math.random() * 4);
+
+
+  additionalRotation +=
+    fullSpins * 360;
+
+
+  // ==========================================
+  // ROTATE
+  // ==========================================
+
+  this.rotation += additionalRotation;
+
+
+  // ==========================================
+  // AUTOMATIC WINNER POPUP
+  // ==========================================
+
+  setTimeout(() => {
+
+    // Wheel has stopped
+    this.spinning = false;
+
+    // Automatically show popup
+    this.showWinner = true;
+
+  }, 4500);
+
+}
+
+
+  // =====================================================
+  // CLOSE WINNER
+  // =====================================================
+
+  closeWinner() {
+
+    this.showWinner = false;
+
+  }
+
+
+  // =====================================================
+  // WHEEL BACKGROUND
+  // =====================================================
+
+  getWheelBackground(): string {
+
+    if (this.choices.length === 0) {
+      return '#ddd';
+    }
+
+
+    const angle =
+      this.getSegmentAngle();
+
+
+    const gradientParts: string[] = [];
+
+
+    this.choices.forEach((_, index) => {
+
+      const start =
+        index * angle;
+
+      const end =
+        (index + 1) * angle;
+
+
+      const color =
+        this.colors[
+          index % this.colors.length
+        ];
+
+
+      gradientParts.push(
+        `${color} ${start}deg ${end}deg`
+      );
+
+    });
+
+
+    return `
+      conic-gradient(
+        from 0deg,
+        ${gradientParts.join(',')}
+      )
+    `;
+
+  }
+
+}
+
+	  ===============================app.css=====================================
+
+	  /* =========================================
+   GLOBAL
+========================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f7f7fb;
+  color: #222;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+
+/* =========================================
+   MAIN APP
+========================================= */
+
+.app {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 30% 50%,
+      #ffffff 0%,
+      #f5f5fa 45%,
+      #eeeeF6 100%
+    );
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.top-header {
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 28px;
+
+  border-bottom: 1px solid #ddd;
+
+  background: rgba(255,255,255,0.9);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.logo-icon {
+  font-size: 26px;
+}
+
+.header-menu {
+  display: flex;
+  gap: 8px;
+}
+
+.header-menu button {
+  border: none;
+  background: transparent;
+
+  padding: 8px 12px;
+
+  font-size: 15px;
+}
+
+.header-menu button:hover {
+  background: #eeeeee;
+  border-radius: 5px;
+}
+
+
+/* =========================================
+   MAIN CONTAINER
+========================================= */
+
+.main-container {
+  display: flex;
+
+  min-height: calc(100vh - 58px);
+}
+
+
+/* =========================================
+   WHEEL SECTION
+========================================= */
+
+.wheel-section {
+  flex: 1;
+
+  min-width: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+
+/* =========================================
+   WHEEL CONTAINER
+========================================= */
+
+.wheel-container {
+  width: 650px;
+  height: 650px;
+
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/* =========================================
+   WHEEL
+========================================= */
+
+.wheel {
+  width: 610px;
+  height: 610px;
+
+  border-radius: 50%;
+
+  position: relative;
+
+  border: 2px solid #444;
+
+  box-shadow:
+    0 15px 35px rgba(0,0,0,0.25);
+
+  transition:
+    transform 4.5s cubic-bezier(.17,.67,.12,1);
+
+  overflow: hidden;
+}
+
+
+/* =========================================
+   WHEEL LABELS
+========================================= */
+
+.wheel-label {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 100px;
+
+  margin-left: -50px;
+  margin-top: -15px;
+
+  text-align: center;
+
+  font-size: 30px;
+  font-weight: 500;
+
+  transform-origin: 50% 50%;
+
+  pointer-events: none;
+
+  white-space: nowrap;
+}
+
+.wheel-label span {
+  display: block;
+    color:white;
+  text-shadow:
+    1px 1px 1px rgba(255,255,255,0.4);
+}
+
+
+/* =========================================
+   CENTER HUB
+========================================= */
+
+.wheel-center {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 135px;
+  height: 135px;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      #ffffff 0%,
+      #eeeeF5 60%,
+      #cfcfd5 100%
+    );
+
+  border: 1px solid #999;
+
+  box-shadow:
+    inset 0 0 12px rgba(0,0,0,0.18),
+    0 3px 8px rgba(0,0,0,0.15);
+
+  z-index: 5;
+}
+
+.center-inner {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 80px;
+  height: 80px;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background: #f8f8fc;
+
+  box-shadow:
+    inset 0 0 12px rgba(0,0,0,0.12);
+}
+
+
+/* =========================================
+   POINTER
+========================================= */
+
+.pointer {
+  position: absolute;
+
+  right: -4px;
+
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  z-index: 20;
+}
+
+.pointer-arrow {
+  width: 0;
+  height: 0;
+
+  border-top: 24px solid transparent;
+  border-bottom: 24px solid transparent;
+
+  border-right: 42px solid white;
+
+  filter:
+    drop-shadow(0 0 2px #555);
+}
+
+
+/* =========================================
+   SPIN BUTTON
+========================================= */
+
+.spin-button {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  width: 105px;
+  height: 105px;
+
+  border-radius: 50%;
+
+  border: 5px solid white;
+
+  background: #444;
+
+  color: white;
+
+  font-size: 18px;
+  font-weight: bold;
+
+  z-index: 10;
+
+  box-shadow:
+    0 5px 15px rgba(0,0,0,0.3);
+}
+
+.spin-button:hover {
+  background: #222;
+
+  transform:
+    translate(-50%, -50%)
+    scale(1.05);
+}
+
+.spin-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   RIGHT CONTROL PANEL
+========================================= */
+
+.control-panel {
+  width: 440px;
+
+  padding: 18px 24px 30px 10px;
+
+  background: #f9f9fd;
+}
+
+
+/* =========================================
+   TOOLBAR
+========================================= */
+
+.toolbar {
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+
+  border-bottom: 2px solid #333;
+
+  background: white;
+}
+
+.tool,
+.color-tool {
+  height: 42px;
+
+  min-width: 58px;
+
+  border: none;
+
+  background: white;
+
+  font-size: 23px;
+
+  position: relative;
+}
+
+.tool:hover,
+.color-tool:hover {
+  background: #eeeeee;
+}
+
+.tool.active {
+  border-bottom: 2px solid #222;
+}
+
+.notification {
+  position: absolute;
+
+  top: -3px;
+  right: 5px;
+
+  width: 20px;
+  height: 20px;
+
+  background: #374b58;
+
+  color: white;
+
+  border-radius: 50%;
+
+  font-size: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* =========================================
+   ACTION BAR
+========================================= */
+
+.action-bar {
+  display: flex;
+
+  gap: 6px;
+
+  padding: 12px 0;
+}
+
+.action-button,
+.add-button {
+  height: 38px;
+
+  border: none;
+
+  border-radius: 5px;
+
+  background: #dedfe3;
+
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.15);
+
+  font-size: 15px;
+}
+
+.action-button {
+  width: 56px;
+}
+
+.add-button {
+  padding: 0 15px;
+
+  margin-left: 2px;
+}
+
+.action-button:hover,
+.add-button:hover {
+  background: #c9cbd0;
+}
+
+.settings {
+  font-size: 22px;
+}
+
+
+/* =========================================
+   TEXT EDITOR
+========================================= */
+
+.editor {
+  position: relative;
+}
+
+.editor textarea {
+  width: 100%;
+
+  height: 278px;
+
+  resize: vertical;
+
+  padding: 10px 18px;
+
+  border: 1px solid #444;
+
+  border-radius: 6px;
+
+  background: #fff;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 20px;
+
+  line-height: 32px;
+
+  outline: none;
+}
+
+.editor textarea:focus {
+  border: 2px solid #6688aa;
+}
+
+.smile {
+  position: absolute;
+
+  right: 10px;
+  bottom: 10px;
+
+  font-size: 20px;
+
+  color: #111;
+}
+
+
+/* =========================================
+   ENTRY COUNTER
+========================================= */
+
+.entry-counter {
+  display: inline-block;
+
+  float: right;
+
+  margin-top: 6px;
+
+  padding: 6px 9px;
+
+  background: #5678ad;
+
+  color: white;
+
+  border-radius: 15px;
+
+  font-size: 14px;
+}
+
+
+/* =========================================
+   WINNER POPUP
+========================================= */
+
+.popup-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(0,0,0,0.55);
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  z-index: 100;
+}
+
+.winner-popup {
+  width: 380px;
+
+  padding: 35px;
+
+  position: relative;
+
+  text-align: center;
+
+  background: white;
+
+  border-radius: 15px;
+
+  box-shadow:
+    0 20px 50px rgba(0,0,0,0.35);
+
+  animation: popup 0.3s ease;
+}
+
+@keyframes popup {
+
+  from {
+    transform: scale(.7);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+}
+
+.close-button {
+  position: absolute;
+
+  top: 10px;
+  right: 15px;
+
+  border: none;
+
+  background: transparent;
+
+  font-size: 25px;
+}
+
+.winner-icon {
+  font-size: 55px;
+}
+
+.winner-popup h2 {
+  margin: 10px 0;
+}
+
+.winner-text {
+  margin: 20px 0;
+
+  padding: 15px;
+
+  background: #f1f1f5;
+
+  border-radius: 8px;
+
+  font-size: 28px;
+
+  font-weight: bold;
+}
+
+.again-button {
+  padding: 12px 25px;
+
+  border: none;
+
+  border-radius: 6px;
+
+  background: #4d6fa5;
+
+  color: white;
+
+  font-size: 16px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1100px) {
+
+  .main-container {
+    flex-direction: column;
+  }
+
+  .wheel-section {
+    min-height: 650px;
+  }
+
+  .control-panel {
+    width: 100%;
+
+    padding: 20px;
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
+  .top-header {
+    padding: 0 12px;
+  }
+
+  .header-menu {
+    display: none;
+  }
+
+  .wheel-container {
+    width: 390px;
+    height: 390px;
+  }
+
+  .wheel {
+    width: 360px;
+    height: 360px;
+  }
+
+  .wheel-label {
+    font-size: 17px;
+  }
+
+  .wheel-center {
+    width: 80px;
+    height: 80px;
+  }
+
+  .center-inner {
+    width: 50px;
+    height: 50px;
+  }
+
+  .spin-button {
+    width: 70px;
+    height: 70px;
+
+    font-size: 13px;
+  }
+
+  .control-panel {
+    padding: 15px;
+  }
+
+}
